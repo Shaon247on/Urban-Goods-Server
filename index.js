@@ -81,7 +81,7 @@ async function run() {
                 res.send({result,totalPages});
             } catch (error) {
                 console.error('Error fetching products:', error);
-                // res.status(500).send('Failed to fetch products');
+                res.status(500).send('Failed to fetch products');
             }
         });
        
