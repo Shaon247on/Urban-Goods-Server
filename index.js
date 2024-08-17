@@ -59,7 +59,7 @@ async function run() {
             query.price = { $gte: priceRange[0], $lte: priceRange[1] };
         
             
-            // let sort = {};
+            let sort = {};
         
             if (filters.sort) {
                 if (filters.sort === 'lowToHigh') {
