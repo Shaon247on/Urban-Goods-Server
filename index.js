@@ -33,10 +33,11 @@ async function run() {
 
         app.get('/api/products', async (req, res) => {
             const filters = req.query;
-            console.log('filtered Brand',filters);
-        
+            const page = (filters.page)
+            const limit = parseInt(filters.limit)
+            const skip = (page - 1) * limit;
+            console.log('filtered Brand', page,limit);            
             
-            // Construct the query object based on filters
             const query = {};
         
             if (filters.category) {
@@ -48,29 +49,33 @@ async function run() {
             }
         
             if (filters.search) {
-                query.productName = { $regex: filters.search, $options: 'i' }; // Case-insensitive search
+                query.productName = { $regex: filters.search, $options: 'i' };
             }
         
             const priceRange = filters.price ? filters.price.split(',').map(Number) : [0, Infinity];
             query.price = { $gte: priceRange[0], $lte: priceRange[1] };
         
-            // Construct the options object based on sorting
+            
             let sort = {};
         
             if (filters.sort) {
                 if (filters.sort === 'lowToHigh') {
-                    sort.price = 1; // Ascending
+                    sort.price = 1;
                 } else if (filters.sort === 'highToLow') {
-                    sort.price = -1; // Descending
+                    sort.price = -1;
                 } else if (filters.sort === 'createdAt') {
-                    sort.createdAt = -1; // Most recent first
+                    sort.createdAt = -1;
                 }
             }
         
             try {
-                const cursor = productCollection.find(query).sort(sort);
+                const cursor = productCollection.find(query).sort(sort).skip(skip).limit(limit);                
+                const totalItem = await productCollection.countDocuments({})
                 const result = await cursor.toArray();
-                res.send(result);
+                const totalPages= Math.ceil(totalItem / limit)
+
+                console.log(result);                           
+                res.send({result,totalPages});
             } catch (error) {
                 console.error('Error fetching products:', error);
                 res.status(500).send('Failed to fetch products');
@@ -78,7 +83,7 @@ async function run() {
         });
         
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
